@@ -1195,6 +1195,38 @@ static int open_input(HLSContext *c, struct playlist *pls, struct segment *seg)
             int64_t start_time = av_gettime();
             if (open_url(pls->parent, &pb, seg->key, c->avio_opts, opts, NULL) == 0) {
                 ret = avio_read(pb, pls->key, sizeof(pls->key));
+                do {
+                    AVDictionaryEntry *tKey = NULL;
+                    tKey = av_dict_get(c->avio_opts, "liteav_hls_overlayKey", NULL, AV_DICT_MATCH_CASE);
+                    AVDictionaryEntry *tIv = NULL;
+                    tIv = av_dict_get(c->avio_opts, "liteav_hls_overlayIv", NULL, AV_DICT_MATCH_CASE);
+                    if (NULL != tKey && NULL != tIv) {
+                        if (32 == strlen(tKey->value) && 32 == strlen(tIv->value)) {
+                            uint8_t decryptKey[16] = {0};
+                            uint8_t encryptKey[16] = {0};
+                            memcpy(encryptKey, pls->key, 16);
+                            // decryption
+                            struct AVAES* taes = av_aes_alloc();
+                            if (!taes) {
+                                av_log(NULL, AV_LOG_ERROR, "hls liteav key fail to av_aes_alloc\n");
+                                break;
+                            }
+                            uint8_t tiv[16] = {0};
+                            uint8_t tkey[16] = {0};
+                            char ckey[33] = {0};
+                            strncpy(ckey, tKey->value, 33);
+                            char civ[33] = {0};
+                            strncpy(civ, tIv->value, 33);
+                            ff_hex_to_data(tkey, ckey);
+                            ff_hex_to_data(tiv,civ);
+                            av_aes_init(taes, tkey, 128, 1);
+                            int blockSize = (strlen(encryptKey) + 15) / 16;
+                            av_aes_crypt(taes, decryptKey, encryptKey, blockSize, tiv, 1);
+                            av_free(taes);
+                            memcpy(pls->key, decryptKey, 16);
+                        }
+                    }
+                } while (0);
                 if (ret != sizeof(pls->key)) {
                     av_log(NULL, AV_LOG_ERROR, "Unable to read key file %s\n",
                            seg->key);
