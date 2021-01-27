@@ -3351,7 +3351,7 @@ void ff_rfps_calculate(AVFormatContext *ic)
         if (st->info->duration_count>1 && !st->r_frame_rate.num
             && tb_unreliable(st->internal->avctx)) {
             int num = 0;
-            double best_error= 0.01;
+            double best_error= 0.04;
             AVRational ref_rate = st->r_frame_rate.num ? st->r_frame_rate : av_inv_q(st->time_base);
 
             for (j= 0; j<MAX_STD_TIMEBASES; j++) {
