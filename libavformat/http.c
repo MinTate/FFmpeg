@@ -233,6 +233,16 @@ static int http_open_cnx_internal(URLContext *h, AVDictionary **options)
     ff_url_join(buf, sizeof(buf), lower_proto, NULL, hostname, port, NULL);
 
     if (!s->hd) {
+        av_log(h, AV_LOG_TRACE, "tatemin (uintptr_t)s->app_ctx: %d\n", (uintptr_t)s->app_ctx);
+        av_log(h, AV_LOG_TRACE, "tatemin (int64_t)(intptr_t)s->app_ctx: %d\n", (int64_t)(intptr_t)s->app_ctx);
+
+        char valuestr[22];
+        snprintf(valuestr, sizeof(valuestr), "%"PRId64, (int64_t)(intptr_t)s->app_ctx);
+        av_log(h, AV_LOG_TRACE, "tatemin valuestr PRId64: %s\n", valuestr);
+        char valuestr2[22];
+        snprintf(valuestr2, sizeof(valuestr2), "%p", (uintptr_t)s->app_ctx);
+        av_log(h, AV_LOG_TRACE, "tatemin valuestr %p: %s\n", valuestr2);
+
         av_dict_set_intptr(options, "ijkapplication", (uintptr_t)s->app_ctx, 0);
         err = ffurl_open_whitelist(&s->hd, buf, AVIO_FLAG_READ_WRITE,
                                    &h->interrupt_callback, options,
